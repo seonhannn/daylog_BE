@@ -2,35 +2,43 @@ package com.daylog.backend.controller;
 
 import com.daylog.backend.entity.Memo;
 import com.daylog.backend.entity.User;
-import com.daylog.backend.entity.User.Provider;
 import com.daylog.backend.service.MemoService;
 import com.daylog.backend.service.UserService;
-import lombok.RequiredArgsConstructor;
+import com.daylog.backend.security.FirebaseAuthentication;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.time.LocalDate;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/memos")
-@RequiredArgsConstructor
 public class MemoController {
     private final MemoService memoService;
     private final UserService userService;
 
-    // 임시: provider, uid를 파라미터로 받음 (추후 인증 필터로 대체)
+    public MemoController(MemoService memoService, UserService userService) {
+        this.memoService = memoService;
+        this.userService = userService;
+    }
+
     @PostMapping
-    public Memo createMemo(@RequestParam Provider provider, @RequestParam String uid, @RequestBody Memo memo) {
-        User user = userService.getOrCreateUser(provider, uid);
+    public Memo createMemo(@RequestBody Memo memo) {
+        FirebaseAuthentication auth = (FirebaseAuthentication) SecurityContextHolder.getContext().getAuthentication();
+        String provider = auth.getProvider();
+        String uid = (String) auth.getPrincipal();
+        User user = userService.getOrCreateUser(User.Provider.valueOf(provider.toUpperCase()), uid);
         memo.setUser(user);
         return memoService.createMemo(memo);
     }
 
     @GetMapping
-    public List<Memo> getMemosByDate(@RequestParam Provider provider, @RequestParam String uid,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        User user = userService.getUserByProviderAndUid(provider, uid);
+    public List<Memo> getMemosByDate(@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        FirebaseAuthentication auth = (FirebaseAuthentication) SecurityContextHolder.getContext().getAuthentication();
+        String provider = auth.getProvider();
+        String uid = (String) auth.getPrincipal();
+        User user = userService.getUserByProviderAndUid(User.Provider.valueOf(provider.toUpperCase()), uid);
         return memoService.getMemosByDate(user, date);
     }
 

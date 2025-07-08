@@ -19,6 +19,9 @@ public class User {
     @Column(nullable = false)
     private Provider provider;
 
+    @Column(nullable = false)
+    private String uid;
+
     private String nickname;
     private String profileImage;
 

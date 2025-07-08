@@ -24,4 +24,9 @@ public class UserService {
         return userRepository.findByProviderAndUid(provider, uid)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
     }
+
+    public void deleteByProviderAndUid(Provider provider, String uid) {
+        userRepository.findByProviderAndUid(provider, uid)
+                .ifPresent(userRepository::delete);
+    }
 }
